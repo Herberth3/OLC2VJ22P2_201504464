@@ -1,0 +1,3 @@
+{
+    "python.pythonPath": "${workspaceFolder}/deploy/Scripts/python"
+}
