@@ -1,4 +1,6 @@
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.preprocessing import PolynomialFeatures, LabelEncoder
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -7,9 +9,17 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 
 header = st.container()
-dataset = st.container
-features = st.container()
-modelTraining = st.container()
+
+st.markdown(
+    """
+    <style>
+    .main {
+        background-color: #FCAD22;
+    }
+    <\style>
+    """,
+    unsafe_allow_html=True
+)
 
 with header:
     st.title("Bienvenido a mi proyecto de Data Science")
@@ -49,9 +59,12 @@ with st.sidebar.header('2. Set Parameters'):
         parameter_target = st.sidebar.text_input('Cual es la variable de respuesta objetiva? : Y')
         parameter_degree = st.sidebar.number_input("Pick a degree", 1, 3, 2)
     elif algorithm_name == "Clasificador Gaussiano":
-        max_depth =st.sidebar.slider("max_depth", 2, 15)
+        st.sidebar.write("Si llena los dos parametros, se tomara como prioridad la posicion de la columna!")
+        parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
+        parameter_target_num = st.sidebar.number_input('Ingrese la posicion de la columna objetivo : Y', 0)
 
 #-----------------------------A L G O R I T M O S------------------------------------------#
+# -- Regresion Lineal -- #
 def build_linear_regression(df):
     if parameter_data == "" or parameter_target == "":
         st.info('No ha ingresado parametros')
@@ -85,6 +98,7 @@ def build_linear_regression(df):
     except:
         st.info('Parametros no reconocidos por la data')
 
+# -- Regresion Polinomial -- #
 def build_polynomial_regression(df):
     if parameter_data == "" or parameter_target == "":
         st.info('No ha ingresado parametros')
@@ -143,6 +157,65 @@ def build_polynomial_regression(df):
     except:
         st.info('Parametros no reconocidos por la data')
 
+# -- Clasificador Gaussiano -- #
+def build_gaussian_model(df):
+    if parameter_target == "" and parameter_target_num == 0:
+        st.info('No ha ingresado parametros')
+        return None
+
+    # Se establece que el usuario pueda utilizar labelencoder durante la ejecucion
+    st.markdown('**Utilizar LabelEncoder**')
+    input_class = st.text_input('Ingrese una clase para transformarla')
+    input_class1 = st.text_input('Puede ingresar una segunda clase para transformarla')
+
+    # Parametro que se solicita para realizar la prediccion
+    # Este es una secuencia de numeros separados por coma, de lo contrario no se muestra el resultado
+    st.markdown('**Prediccion**')
+    input_feature = st.text_input('Establezca un array de prediccion separado por comas','Ex: 45,1,8,5,6')
+    input_array = input_feature.split(',')
+
+    try:
+        # Validaciones para los campos de texto de los label encoder, si estan vacios el DF no se modifica
+        # De lo contrario el DF (data frame) se puede modificar en ejecucion
+        if input_class != "":
+            le = LabelEncoder()
+            df[input_class] = le.fit_transform(df[input_class])
+            st.write(df)
+
+        if input_class1 != "":
+            le = LabelEncoder()
+            df[input_class1] = le.fit_transform(df[input_class1])
+            st.write(df)
+
+
+        # Validacion para que los parametros de localizacion en la tabla sean correctos
+        if parameter_target_num != 0:
+            y = df.iloc[:, parameter_target_num]
+        else:
+            y = df[[parameter_target]]
+
+        x = df.iloc[:,:-1]
+
+        # Entrenamiento y prueba de los campos
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=None, random_state=None)
+
+        # Modelo a utilizar y poner a prueba la prediccion que este tomo en el entrenamiento
+        model = GaussianNB()
+        model.fit(x_train, y_train)
+        y_pred = model.predict(x_test)
+        st.write("Prediccion del entrenamiento:")
+        st.write(y_pred)
+
+        # Array con los datos a predecir
+        desired_array = [int(numeric_string) for numeric_string in input_array]
+        # Se crea un nuevo valor para la X que se enviara para una nueva prediccion
+        x_new_val = np.array(desired_array)
+        y_pred = model.predict([x_new_val])
+
+        st.write("Prediccion", y_pred)
+    except:
+        st.info('Parametros no reconocidos por la data')
+
 #-----------------------------M A I N   P A N E L------------------------------------------#
 if data_file is not None:
 
@@ -165,7 +238,7 @@ if data_file is not None:
     elif algorithm_name == "Regresion Polinomial":
         build_polynomial_regression(df)
     elif algorithm_name == "Clasificador Gaussiano":
-        st.write("Esperando a gauss")
+        build_gaussian_model(df)
 
 else:
     st.info('Esperando a que se cargue un archivo')
