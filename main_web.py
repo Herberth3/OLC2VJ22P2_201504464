@@ -1,5 +1,3 @@
-from calendar import c
-from tkinter import Y
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
