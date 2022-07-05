@@ -1,6 +1,8 @@
 from calendar import c
-from sklearn.model_selection import train_test_split
+from tkinter import Y
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import PolynomialFeatures, LabelEncoder
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 import streamlit as st
@@ -67,6 +69,14 @@ with st.sidebar.header('2. Set Parameters'):
         parameter_encoder = st.sidebar.checkbox('Implementar Encoder')
         parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
         parameter_name_tree = st.sidebar.text_input('Ingrese un nombre para su Arbol de decision:', "Mi arbol de decision")
+    elif algorithm_name == "Redes neuronales":
+        parameter_encoder = st.sidebar.checkbox('Implementar Encoder')
+        parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
+        parameter_capa1 = st.sidebar.number_input('Capa1, Hidden Layer Size', 0,None, 100)
+        parameter_capa2 = st.sidebar.number_input('Capa2, Hidden Layer Size', 0,None, 100)
+        parameter_capa3 = st.sidebar.number_input('Capa3, Hidden Layer Size', 0,None, 100)
+        parameter_max_iter = st.sidebar.number_input('Max, iteraciones', 0,None, 1000)
+
 
 #-----------------------------A L G O R I T M O S------------------------------------------#
 # -- Regresion Lineal -- #
@@ -281,6 +291,60 @@ def build_decision_tree(df):
     except:
         st.info('Parametros no reconocidos por la data')
 
+# -- Clasificador Gaussiano -- #
+def build_red_neuronal(df):
+    if parameter_target == "":
+        st.info('No ha ingresado parametros')
+        return None
+
+    # Parametro que se solicita para realizar la prediccion
+    # Este es una secuencia de numeros separados por coma, de lo contrario no se muestra el resultado
+    st.markdown('**Prediccion**')
+    input_feature = st.text_input('Establezca un array de prediccion separado por comas','Ex: 45,1,8,5,6')
+    input_array = input_feature.split(',')
+
+    try:
+        # Columnas implementando Encoder
+        if parameter_encoder:
+
+            list_col = df.drop(columns=parameter_target)
+            # Creating labelEncoder
+            le = LabelEncoder()
+            for col_name in list_col:
+                df[col_name] = le.fit_transform(df[col_name])
+
+            df[parameter_target] = le.fit_transform(df[parameter_target])
+            st.write("Nueva Tabla con Encoder")
+            st.write(df)
+
+        # Validacion para que los parametros de localizacion en la tabla sean correctos
+        y = df[[parameter_target]]
+
+        x = df.drop(columns=parameter_target)
+
+        # Entrenamiento y prueba de los campos
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=None, random_state=None)
+
+        mlp = MLPClassifier(hidden_layer_sizes=(parameter_capa1, parameter_capa2, parameter_capa3,), max_iter=parameter_max_iter)
+
+        scores = cross_val_score(mlp, x, y)
+        st.write("Score:")
+        st.write(scores.mean())
+        st.write("Std. Desviacion")
+        st.write(scores.std())
+
+        mlp.fit(X=x_train, y=y_train)
+
+        # Array con los datos a predecir
+        desired_array = [int(numeric_string) for numeric_string in input_array]
+        # Se crea un nuevo valor para la X que se enviara para una nueva prediccion
+        x_new_val = np.array(desired_array)
+        y_pred = mlp.predict([x_new_val])
+
+        st.write("Prediccion", y_pred)
+
+    except:
+        st.info('Parametros no reconocidos por la data')
 
 #-----------------------------M A I N   P A N E L------------------------------------------#
 if data_file is not None:
@@ -307,6 +371,8 @@ if data_file is not None:
         build_gaussian_model(df)
     elif algorithm_name == "Clasificador de arboles de desicion":
         build_decision_tree(df)
+    elif algorithm_name == "Redes neuronales":
+        build_red_neuronal(df)
 
 else:
     st.info('Esperando a que se cargue un archivo')
