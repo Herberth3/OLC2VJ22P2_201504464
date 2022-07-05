@@ -333,7 +333,7 @@ def build_red_neuronal(df):
         st.write("Std. Desviacion")
         st.write(scores.std())
 
-        mlp.fit(X=x_train, y=y_train)
+        mlp.fit(x_train, y_train)
 
         # Array con los datos a predecir
         desired_array = [int(numeric_string) for numeric_string in input_array]
