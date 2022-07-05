@@ -61,10 +61,10 @@ with st.sidebar.header('2. Set Parameters'):
         parameter_target = st.sidebar.text_input('Cual es la variable de respuesta objetiva? : Y')
         parameter_degree = st.sidebar.number_input("Pick a degree", 1, 3, 2)
     elif algorithm_name == "Clasificador Gaussiano":
-        st.sidebar.write("Si llena los dos parametros, se tomara como prioridad la posicion de la columna!")
+        parameter_encoder = st.sidebar.checkbox('Implementar Encoder')
         parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
-        parameter_target_num = st.sidebar.number_input('Ingrese la posicion de la columna objetivo : Y', 0)
     elif algorithm_name == "Clasificador de arboles de desicion":
+        parameter_encoder = st.sidebar.checkbox('Implementar Encoder')
         parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
         parameter_name_tree = st.sidebar.text_input('Ingrese un nombre para su Arbol de decision:', "Mi arbol de decision")
 
@@ -85,6 +85,10 @@ def build_linear_regression(df):
 
         st.write("Interseccion (b)", regr.intercept_)
         st.write("Pendiente (m)", regr.coef_)
+
+        # Mostrando la funcion de tendencia
+        st.markdown('**La funcion para regresion lineal es: y = mx + b**')
+        st.write("y = " + str(regr.coef_[0]) + "x + (" + str(regr.intercept_) + ")")
 
         st.markdown('**Prediccion**')
         input_feature = st.number_input('Establezca parametro de prediccion', None, None, 1000)
@@ -126,6 +130,16 @@ def build_polynomial_regression(df):
         st.write("Interseccion (b)", regr.intercept_)
         st.write("Pendiente (m)", regr.coef_)
 
+        # Mostrando la funcion de tendencia
+        st.markdown('**Funcion de tendencia polinomial:**')
+        coeficientes = ""
+        grado = 0
+        for coef in regr.coef_[0]:
+            coeficientes = coeficientes +"("+ str(coef) +")"+ "x^" + str(grado) + " + "
+            grado = grado + 1
+
+        st.write(coeficientes +"("+ str(regr.intercept_[0]) + ")")
+
         st.markdown('**Prediccion**')
         input_feature = st.number_input('Establezca parametro de prediccion', None, None, 1000)
 
@@ -164,14 +178,9 @@ def build_polynomial_regression(df):
 
 # -- Clasificador Gaussiano -- #
 def build_gaussian_model(df):
-    if parameter_target == "" and parameter_target_num == 0:
+    if parameter_target == "":
         st.info('No ha ingresado parametros')
         return None
-
-    # Se establece que el usuario pueda utilizar labelencoder durante la ejecucion
-    st.markdown('**Utilizar LabelEncoder**')
-    input_class = st.text_input('Ingrese una clase para transformarla')
-    input_class1 = st.text_input('Puede ingresar una segunda clase para transformarla')
 
     # Parametro que se solicita para realizar la prediccion
     # Este es una secuencia de numeros separados por coma, de lo contrario no se muestra el resultado
@@ -180,26 +189,23 @@ def build_gaussian_model(df):
     input_array = input_feature.split(',')
 
     try:
-        # Validaciones para los campos de texto de los label encoder, si estan vacios el DF no se modifica
-        # De lo contrario el DF (data frame) se puede modificar en ejecucion
-        if input_class != "":
-            le = LabelEncoder()
-            df[input_class] = le.fit_transform(df[input_class])
-            st.write(df)
+        # Columnas implementando Encoder
+        if parameter_encoder:
 
-        if input_class1 != "":
+            list_col = df.drop(columns=parameter_target)
+            # Creating labelEncoder
             le = LabelEncoder()
-            df[input_class1] = le.fit_transform(df[input_class1])
-            st.write(df)
+            for col_name in list_col:
+                df[col_name] = le.fit_transform(df[col_name])
 
+            df[parameter_target] = le.fit_transform(df[parameter_target])
+            st.write("Nueva Tabla con Encoder")
+            st.write(df)
 
         # Validacion para que los parametros de localizacion en la tabla sean correctos
-        if parameter_target_num != 0:
-            y = df.iloc[:, parameter_target_num]
-        else:
-            y = df[[parameter_target]]
+        y = df[[parameter_target]]
 
-        x = df.iloc[:,:-1]
+        x = df.drop(columns=parameter_target)
 
         # Entrenamiento y prueba de los campos
         x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=None, random_state=None)
@@ -227,46 +233,50 @@ def build_decision_tree(df):
         st.info('No ha ingresado parametros')
         return None
 
-    # Validacion para que los parametros de localizacion en la tabla sean correctos
-
-    x = df.drop(columns=parameter_target)
-
-    lista_col_x = []
-    for col_name in x:
-        list_c = df[col_name].values.tolist()
-        lista_col_x.append(list_c)
-
-    lista_col_y = df[parameter_target].values.tolist()
-
-    # Creating labelEncoder
-    le = LabelEncoder()
-    lista_encoder = []
-    for elem in lista_col_x:
-        encoder = le.fit_transform(elem)
-        lista_encoder.append(encoder)
-
-    label = le.fit_transform(lista_col_y)
-
-    # Combinig attributes into single listof tuples
-    features=list(zip(*lista_encoder))
-
-    # fit the model
-    clf = DecisionTreeClassifier().fit(features, label)
-
-    st.markdown("**"+ parameter_name_tree +"**")
-    fig = plt.figure(figsize=(20,10))
-    plot_tree(clf, filled=True)
-    st.pyplot(fig)
-
-    #plot_tree(decision_tree=model_tree,
-            #feature_names=x.columns,
-            #class_names=["0", "1"],
-            #rounded=True,
-            #filled=True)
-
     try:
         # Validacion para que los parametros de localizacion en la tabla sean correctos
-        sql = []
+
+        x = df.drop(columns=parameter_target)
+
+        # Columnas implementando Encoder
+        if parameter_encoder:
+            lista_col_x = []
+            for col_name in x:
+                list_c = df[col_name].values.tolist()
+                lista_col_x.append(list_c)
+
+            lista_col_y = df[parameter_target].values.tolist()
+
+            # Creating labelEncoder
+            le = LabelEncoder()
+            lista_encoder = []
+            for elem in lista_col_x:
+                encoder = le.fit_transform(elem)
+                lista_encoder.append(encoder)
+
+            label = le.fit_transform(lista_col_y)
+
+            # Combinig attributes into single listof tuples
+            features=list(zip(*lista_encoder))
+        else:
+            # Columnas sin Encoder
+            lista_col_x = []
+            for col_name in x:
+                list_c = df[col_name]
+                lista_col_x.append(list_c)
+
+            label = df[parameter_target]
+
+            # Combinig attributes into single listof tuples
+            features=list(zip(*lista_col_x))
+
+        # fit the model
+        clf = DecisionTreeClassifier().fit(features, label)
+
+        st.markdown("**"+ parameter_name_tree +"**")
+        fig = plt.figure(figsize=(20,10))
+        plot_tree(clf, filled=True)
+        st.pyplot(fig)
         
     except:
         st.info('Parametros no reconocidos por la data')
