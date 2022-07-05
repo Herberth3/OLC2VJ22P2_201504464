@@ -1,6 +1,8 @@
+from calendar import c
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.preprocessing import PolynomialFeatures, LabelEncoder
+from sklearn.tree import DecisionTreeClassifier, plot_tree
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -62,6 +64,9 @@ with st.sidebar.header('2. Set Parameters'):
         st.sidebar.write("Si llena los dos parametros, se tomara como prioridad la posicion de la columna!")
         parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
         parameter_target_num = st.sidebar.number_input('Ingrese la posicion de la columna objetivo : Y', 0)
+    elif algorithm_name == "Clasificador de arboles de desicion":
+        parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
+        parameter_name_tree = st.sidebar.text_input('Ingrese un nombre para su Arbol de decision:', "Mi arbol de decision")
 
 #-----------------------------A L G O R I T M O S------------------------------------------#
 # -- Regresion Lineal -- #
@@ -216,6 +221,57 @@ def build_gaussian_model(df):
     except:
         st.info('Parametros no reconocidos por la data')
 
+# -- Clasificador de arboles de desicion -- #
+def build_decision_tree(df):
+    if parameter_target == "":
+        st.info('No ha ingresado parametros')
+        return None
+
+    # Validacion para que los parametros de localizacion en la tabla sean correctos
+
+    x = df.drop(columns=parameter_target)
+
+    lista_col_x = []
+    for col_name in x:
+        list_c = df[col_name].values.tolist()
+        lista_col_x.append(list_c)
+
+    lista_col_y = df[parameter_target].values.tolist()
+
+    # Creating labelEncoder
+    le = LabelEncoder()
+    lista_encoder = []
+    for elem in lista_col_x:
+        encoder = le.fit_transform(elem)
+        lista_encoder.append(encoder)
+
+    label = le.fit_transform(lista_col_y)
+
+    # Combinig attributes into single listof tuples
+    features=list(zip(*lista_encoder))
+
+    # fit the model
+    clf = DecisionTreeClassifier().fit(features, label)
+
+    st.markdown("**"+ parameter_name_tree +"**")
+    fig = plt.figure(figsize=(20,10))
+    plot_tree(clf, filled=True)
+    st.pyplot(fig)
+
+    #plot_tree(decision_tree=model_tree,
+            #feature_names=x.columns,
+            #class_names=["0", "1"],
+            #rounded=True,
+            #filled=True)
+
+    try:
+        # Validacion para que los parametros de localizacion en la tabla sean correctos
+        sql = []
+        
+    except:
+        st.info('Parametros no reconocidos por la data')
+
+
 #-----------------------------M A I N   P A N E L------------------------------------------#
 if data_file is not None:
 
@@ -239,6 +295,8 @@ if data_file is not None:
         build_polynomial_regression(df)
     elif algorithm_name == "Clasificador Gaussiano":
         build_gaussian_model(df)
+    elif algorithm_name == "Clasificador de arboles de desicion":
+        build_decision_tree(df)
 
 else:
     st.info('Esperando a que se cargue un archivo')
