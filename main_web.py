@@ -66,6 +66,7 @@ with st.sidebar.header('2. Set Parameters'):
     elif algorithm_name == "Clasificador de arboles de desicion":
         parameter_encoder = st.sidebar.checkbox('Implementar Encoder')
         parameter_target = st.sidebar.text_input('Ingrese el nombre de la columna objetivo : Y')
+        parameter_depth_tree = st.sidebar.number_input('Profundidad de las ramas en el arbol', 0, None, 5)
         parameter_name_tree = st.sidebar.text_input('Ingrese un nombre para su Arbol de decision:', "Mi arbol de decision")
     elif algorithm_name == "Redes neuronales":
         parameter_encoder = st.sidebar.checkbox('Implementar Encoder')
@@ -303,7 +304,7 @@ def build_decision_tree(df):
         print(x.columns.values)
         print(y.values)
 
-        clf = DecisionTreeClassifier()
+        clf = DecisionTreeClassifier(max_depth=parameter_depth_tree)
         clf_fit = clf.fit(x_train, y_train)
         st.markdown("**"+ parameter_name_tree +"**")
         fig = plt.figure(figsize=(20,10))
