@@ -303,7 +303,7 @@ def build_decision_tree(df):
         print(x.columns.values)
         print(y.values)
 
-        clf = DecisionTreeClassifier(max_depth=4)
+        clf = DecisionTreeClassifier()
         clf_fit = clf.fit(x_train, y_train)
         st.markdown("**"+ parameter_name_tree +"**")
         fig = plt.figure(figsize=(20,10))
@@ -336,12 +336,12 @@ def build_red_neuronal(df):
             for col_name in list_col:
                 df[col_name] = le.fit_transform(df[col_name])
 
-            df[parameter_target] = le.fit_transform(df[parameter_target])
+            #df[parameter_target] = le.fit_transform(df[parameter_target])
             st.write("Nueva Tabla con Encoder")
             st.write(df)
 
         # Validacion para que los parametros de localizacion en la tabla sean correctos
-        y = df[[parameter_target]]
+        y = df[parameter_target]
 
         x = df.drop(columns=parameter_target)
 
