@@ -244,46 +244,71 @@ def build_decision_tree(df):
     try:
         # Validacion para que los parametros de localizacion en la tabla sean correctos
 
-        x = df.drop(columns=parameter_target)
+        # Columnas implementando Encoder
+        
+        #x = df.drop(columns=parameter_target)
 
         # Columnas implementando Encoder
-        if parameter_encoder:
-            lista_col_x = []
-            for col_name in x:
-                list_c = df[col_name].values.tolist()
-                lista_col_x.append(list_c)
+        #if parameter_encoder:
+            #lista_col_x = []
+            #for col_name in x:
+                #list_c = df[col_name].values.tolist()
+                #lista_col_x.append(list_c)
 
-            lista_col_y = df[parameter_target].values.tolist()
+            #lista_col_y = df[parameter_target].values.tolist()
 
             # Creating labelEncoder
-            le = LabelEncoder()
-            lista_encoder = []
-            for elem in lista_col_x:
-                encoder = le.fit_transform(elem)
-                lista_encoder.append(encoder)
+            #le = LabelEncoder()
+            #lista_encoder = []
+            #for elem in lista_col_x:
+                #encoder = le.fit_transform(elem)
+                #lista_encoder.append(encoder)
 
-            label = le.fit_transform(lista_col_y)
+            #label = le.fit_transform(lista_col_y)
 
             # Combinig attributes into single listof tuples
-            features=list(zip(*lista_encoder))
-        else:
+            #features=list(zip(*lista_encoder))
+        #else:
             # Columnas sin Encoder
-            lista_col_x = []
-            for col_name in x:
-                list_c = df[col_name]
-                lista_col_x.append(list_c)
+            #lista_col_x = []
+            #for col_name in x:
+                #list_c = df[col_name]
+                #lista_col_x.append(list_c)
 
-            label = df[parameter_target]
+            #label = df[parameter_target]
 
             # Combinig attributes into single listof tuples
-            features=list(zip(*lista_col_x))
+            #features=list(zip(*lista_col_x))
 
         # fit the model
-        clf = DecisionTreeClassifier().fit(features, label)
+        #clf = DecisionTreeClassifier().fit(features, label)
+        
+        if parameter_encoder:
 
+            list_col = df.drop(columns=parameter_target)
+            # Creating labelEncoder
+            le = LabelEncoder()
+            for col_name in list_col:
+                df[col_name] = le.fit_transform(df[col_name])
+            #df[parameter_target] = le.fit_transform(df[parameter_target])
+            st.write("Nueva Tabla con Encoder")
+            st.write(df)
+
+        # Validacion para que los parametros de localizacion en la tabla sean correctos
+        y = df[parameter_target]
+        x = df.drop(columns=parameter_target)
+        # Entrenamiento y prueba de los campos
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=None, random_state=None)
+
+        print(x.columns.values)
+        print(y.values)
+
+        clf = DecisionTreeClassifier(max_depth=4)
+        clf_fit = clf.fit(x_train, y_train)
         st.markdown("**"+ parameter_name_tree +"**")
         fig = plt.figure(figsize=(20,10))
-        plot_tree(clf, filled=True)
+        #plot_tree(clf, filled=True)
+        plot_tree(clf_fit, feature_names=list(x.columns.values), class_names=list(y.values), filled=True)
         st.pyplot(fig)
         
     except:
